@@ -2,11 +2,12 @@
 import pytest
 
 from statusline.parse import (
-    Context, ModelInfo, WorkspaceInfo, ContextWindowInfo, UsageInfo,
+    Context, ModelInfo, WorkspaceInfo, ContextWindowInfo, UsageInfo as CtxUsageInfo,
     ThinkingInfo, VimInfo, EffortInfo,
 )
 from statusline.state import TipRotation
 from statusline.tips import TipPool
+from statusline.usage import UsageInfo, UsageWindow
 from statusline.render import row1, row2, row3
 
 
@@ -94,3 +95,49 @@ def test_row2_handles_unknown_ctx_pct():
     out = row2(ctx, rot, ai_tip="", state_tags=[])
     assert "CTX" in out
     assert "--" in out  # placeholder for unknown
+
+
+# ── Usage integration with row1 ──────────────────────────────────────
+
+def _make_usage_info() -> UsageInfo:
+    return UsageInfo(
+        five_hour=UsageWindow(used_pct=27.0, resets_in_seconds=5280, projected_pct=42.0),
+        seven_day=UsageWindow(used_pct=79.0, resets_in_seconds=41280, projected_pct=88.0),
+        raw_present=True,
+    )
+
+
+def _strip_ansi(s: str) -> str:
+    import re
+    return re.sub(r"\x1b\[[0-9;]*m", "", s)
+
+
+def test_row1_includes_usage_fields_when_present():
+    ctx = make_ctx()
+    out = _strip_ansi(row1(ctx, usage=_make_usage_info()))
+    assert "5h[" in out, f"row1 missing 5h segment: {out!r}"
+    assert "7d[" in out, f"row1 missing 7d segment: {out!r}"
+    # Sanity: 27% and 79% formatted
+    assert "27%" in out
+    assert "79%" in out
+
+
+def test_row1_omits_usage_when_no_data():
+    ctx = make_ctx()
+    out = _strip_ansi(row1(ctx, usage=None))
+    assert "5h" not in out, f"row1 should not contain 5h when usage is None: {out!r}"
+    assert "7d" not in out, f"row1 should not contain 7d when usage is None: {out!r}"
+
+
+def test_row1_omits_usage_when_both_windows_none():
+    ctx = make_ctx()
+    usage_empty = UsageInfo(
+        five_hour=None, seven_day=None, raw_present=False,
+    )
+    out = _strip_ansi(row1(ctx, usage=usage_empty))
+    # Both windows None → row1 looks exactly like before
+    assert "5h" not in out
+    assert "7d" not in out
+    # But the base content is still there
+    assert "Claude 4.6 Sonnet" in out
+    assert "main" in out

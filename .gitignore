@@ -16,3 +16,4 @@ dist/
 .session_start
 .tip_rotate
 ai_tip_cache
+usage_cache.json

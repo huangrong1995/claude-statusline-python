@@ -4,12 +4,11 @@ C-class defense: catch-all at the bottom guarantees 3 lines of output for
 any input. All exceptions logged to stderr.
 """
 from __future__ import annotations
-import os
 import pathlib
 import sys
 import time
 
-from statusline import parse, state, detect, render
+from statusline import parse, state, detect, render, usage
 
 
 AI_TIP_CACHE: pathlib.Path = pathlib.Path.home() / ".claude" / "statusline" / "ai_tip_cache"
@@ -59,7 +58,12 @@ def main() -> int:
         state_tags = detect.detect_state_tags(ctx.workspace.current_dir)
         ai_tip = _read_ai_tip()
 
-        line1 = render.row1(ctx)
+        # load_usage() handles all failures internally and returns an empty
+        # UsageInfo when the API/cache is unavailable. The main() catch-all
+        # below is a backstop.
+        usage_info = usage.load_usage()
+
+        line1 = render.row1(ctx, usage=usage_info)
         line2 = render.row2(
             ctx, next_rot,
             ai_tip=ai_tip,

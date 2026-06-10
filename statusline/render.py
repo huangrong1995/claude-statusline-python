@@ -1,6 +1,6 @@
 """3-row statusline assembly.
 
-Row 1: MODEL · DIRECTORY · GIT
+Row 1: MODEL · DIRECTORY · GIT · USAGE
 Row 2: CTX | CACHE | TOK | TIP
 Row 3: progress bar + percentage
 """
@@ -11,6 +11,7 @@ import os
 from statusline.parse import Context
 from statusline.state import TipRotation
 from statusline.tips import select_tip, TipResult
+from statusline.usage import UsageInfo, UsageWindow, _format_resets_in
 from statusline.output import (
     CLR_DIM, CLR_TEXT, CLR_ACCENT, CLR_RESET,
     colorize, truncate, pct_color,
@@ -41,12 +42,38 @@ def _row1_git(ctx: Context) -> str:
     return f"{CLR_DIM}⎇ {display}{CLR_RESET}"
 
 
-def row1(ctx: Context) -> str:
+def _row1_usage_window(label: str, w: UsageWindow) -> str:
+    """Format one window segment: 5h[27%]⏰1h28m →42%
+
+    Brackets get pct_color(); countdown + arrow + projection stay DIM."""
+    used = colorize(f"{w.used_pct:3.0f}%", pct_color(w.used_pct))
+    countdown = colorize(f"⏰{_format_resets_in(w.resets_in_seconds)}", CLR_DIM)
+    projection = colorize(f"→{w.projected_pct:3.0f}%", CLR_DIM)
+    return f"{CLR_TEXT}{label}{CLR_RESET}[{used}]{countdown} {projection}"
+
+
+def _row1_usage(usage: UsageInfo | None) -> str:
+    """Render the usage segment, or '' when no windows are present."""
+    if usage is None:
+        return ""
+    parts: list[str] = []
+    if usage.five_hour is not None:
+        parts.append(_row1_usage_window("5h", usage.five_hour))
+    if usage.seven_day is not None:
+        parts.append(_row1_usage_window("7d", usage.seven_day))
+    return f"{CLR_DIM} | {CLR_RESET}".join(parts)
+
+
+def row1(ctx: Context, usage: UsageInfo | None = None) -> str:
     model = colorize(ctx.model.display_name or "--", CLR_ACCENT)
     directory = colorize(truncate(ctx.workspace.current_dir or "", 40), CLR_DIM)
     git = _row1_git(ctx)
     sep = f"{CLR_DIM} | {CLR_RESET}"
-    return f"{CLR_ACCENT}◆ {CLR_RESET}{model}{sep}{CLR_DIM}📁 {CLR_RESET}{directory}{sep}{git}"
+    base = f"{CLR_ACCENT}◆ {CLR_RESET}{model}{sep}{CLR_DIM}📁 {CLR_RESET}{directory}{sep}{git}"
+    usage_seg = _row1_usage(usage)
+    if usage_seg:
+        return f"{base}{sep}{usage_seg}"
+    return base
 
 
 def _row2_ctx(ctx: Context) -> str:
