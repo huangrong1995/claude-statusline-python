@@ -12,7 +12,7 @@ from statusline.parse import Context
 from statusline.state import TipRotation
 from statusline.tips import select_tip, TipResult
 from statusline.output import (
-    CLR_DIM, CLR_TEXT, CLR_ACCENT, CLR_PROGRESS, CLR_RESET,
+    CLR_DIM, CLR_TEXT, CLR_ACCENT, CLR_RESET,
     colorize, truncate, pct_color,
 )
 
@@ -126,8 +126,8 @@ def row3(ctx: Context) -> str:
         except (ValueError, TypeError):
             pass
 
-    BLK_FILLED = "━"
-    BLK_EMPTY = "─"
+    BLK_FILLED = "▰"
+    BLK_EMPTY = "▱"
     pct_int = int(pct) if pct >= 0 else 0
     pct_int = max(0, min(100, pct_int))
     filled = pct_int * width // 100
@@ -139,8 +139,9 @@ def row3(ctx: Context) -> str:
 
     filled_str = BLK_FILLED * filled
     empty_str = BLK_EMPTY * empty
+    fill_color = pct_color(pct_int)
     return (
-        f"{colorize(filled_str, CLR_PROGRESS)}"
+        f"{colorize(filled_str, fill_color)}"
         f"{colorize(empty_str, CLR_DIM)}"
-        f" {colorize(f'{pct_int:3d}%', pct_color(pct_int))}"
+        f" {colorize(f'{pct_int:3d}%', fill_color)}"
     )

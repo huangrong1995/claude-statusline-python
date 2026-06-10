@@ -82,7 +82,7 @@ def test_row3_includes_progress_bar():
     ))
     out = row3(ctx)
     assert "50%" in out
-    assert "━" in out or "─" in out  # progress bar chars
+    assert "▰" in out or "▱" in out  # progress bar chars
 
 
 def test_row2_handles_unknown_ctx_pct():
