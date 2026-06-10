@@ -117,7 +117,7 @@ def parse(json_str: str) -> Context:
         return _empty_context()
     try:
         data = json.loads(json_str)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError, RecursionError, MemoryError):
         return _empty_context()
     if not isinstance(data, dict):
         return _empty_context()
