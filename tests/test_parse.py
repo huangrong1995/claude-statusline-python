@@ -98,3 +98,58 @@ def test_context_is_frozen():
     ctx = parse(raw)
     with pytest.raises(FrozenInstanceError):
         ctx.model = ModelInfo(display_name="y", id="z")  # type: ignore[misc]
+
+
+def test_non_dict_subobjects_return_safe_default():
+    """parse() must never raise, even when subobjects are non-dict types
+    (str, list, int, bool, null, etc.). This is the C-class defense contract."""
+    pathological_inputs = [
+        {"model": [1, 2, 3]},
+        {"model": "string-not-dict"},
+        {"workspace": []},
+        {"workspace": 42},
+        {"worktree": "main"},          # string where dict expected
+        {"worktree": []},
+        {"worktree": 42},
+        {"worktree": True},
+        {"vim": [1, 2]},
+        {"vim": False},
+        {"context_window": "oops"},
+        {"thinking": 99},
+        {"effort": None},
+        {"context_window": {"current_usage": "not a dict"}},
+        {"context_window": {"current_usage": [1, 2, 3]}},
+        {"context_window": {"current_usage": 0}},  # falsy but type-correct
+    ]
+    for payload in pathological_inputs:
+        raw = json.dumps(payload)
+        ctx = parse(raw)
+        assert isinstance(ctx, Context), f"parse({payload!r}) did not return Context"
+        assert ctx.raw_present is True, f"parse({payload!r}) set raw_present=False but JSON was valid"
+        # All other fields should still be at safe defaults
+        assert ctx.model.display_name == ""
+        assert ctx.workspace.current_dir == ""
+        assert ctx.vim.mode == ""
+        assert ctx.context_window.used_percentage == -1.0
+
+
+def test_used_percentage_zero_is_not_treated_as_unknown():
+    """The sentinel for unknown is -1.0, NOT 0.0. A real 0% must stay 0.0."""
+    raw = json.dumps({
+        "model": {"display_name": "x"},
+        "workspace": {"current_dir": "/tmp"},
+        "context_window": {"used_percentage": 0.0},
+    })
+    ctx = parse(raw)
+    assert ctx.context_window.used_percentage == 0.0
+    assert ctx.context_window.used_percentage != -1.0
+
+
+def test_used_percentage_missing_is_treated_as_unknown():
+    """When the field is absent, sentinel -1.0 is used (not 0.0)."""
+    raw = json.dumps({
+        "model": {"display_name": "x"},
+        "workspace": {"current_dir": "/tmp"},
+    })
+    ctx = parse(raw)
+    assert ctx.context_window.used_percentage == -1.0

@@ -9,6 +9,12 @@ import json
 from dataclasses import dataclass
 
 
+def _dict(d) -> dict:
+    """Return d if it's a dict, else empty dict. Used to safely traverse
+    subobjects in the statusline JSON without ever raising."""
+    return d if isinstance(d, dict) else {}
+
+
 @dataclass(frozen=True, slots=True)
 class ModelInfo:
     display_name: str
@@ -90,8 +96,9 @@ def _empty_context() -> Context:
     )
 
 
-def _usage_from(d: dict | None) -> UsageInfo | None:
-    if d is None:
+def _usage_from(d) -> UsageInfo | None:
+    d = _dict(d)
+    if not d:
         return None
     return UsageInfo(
         input_tokens=int(d.get("input_tokens") or 0),
@@ -115,13 +122,13 @@ def parse(json_str: str) -> Context:
     if not isinstance(data, dict):
         return _empty_context()
 
-    model = data.get("model") or {}
-    workspace = data.get("workspace") or {}
-    repo = workspace.get("repo") or {}
-    cw = data.get("context_window") or {}
-    thinking = data.get("thinking") or {}
-    vim = data.get("vim") or {}
-    effort = data.get("effort") or {}
+    model = _dict(data.get("model"))
+    workspace = _dict(data.get("workspace"))
+    repo = _dict(workspace.get("repo"))
+    cw = _dict(data.get("context_window"))
+    thinking = _dict(data.get("thinking"))
+    vim = _dict(data.get("vim"))
+    effort = _dict(data.get("effort"))
 
     return Context(
         model=ModelInfo(
@@ -131,7 +138,7 @@ def parse(json_str: str) -> Context:
         workspace=WorkspaceInfo(
             current_dir=str(workspace.get("current_dir") or ""),
             git_worktree=str(workspace.get("git_worktree") or ""),
-            worktree_name=str((data.get("worktree") or {}).get("name") or ""),
+            worktree_name=str(_dict(data.get("worktree")).get("name") or ""),
             repo_owner=str(repo.get("owner") or ""),
             repo_name=str(repo.get("name") or ""),
         ),
