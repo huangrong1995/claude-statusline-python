@@ -14,7 +14,6 @@ def tmp_state_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(state, "STATE_DIR", tmp_path)
     monkeypatch.setattr(state, "TIP_ROTATE_FILE", tmp_path / ".tip_rotate")
     monkeypatch.setattr(state, "SESSION_START_FILE", tmp_path / ".session_start")
-    monkeypatch.setattr(usage, "STATE_DIR", tmp_path)
     monkeypatch.setattr(usage, "CACHE_FILE", tmp_path / "usage_cache.json")
     return tmp_path
 

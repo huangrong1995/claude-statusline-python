@@ -10,7 +10,7 @@ import pytest
 from statusline import usage
 from statusline.usage import (
     UsageInfo, UsageWindow, load_usage, _parse_response,
-    _format_resets_in,
+    format_resets_in,
 )
 
 
@@ -104,12 +104,14 @@ def test_load_usage_with_no_cache_fetches_and_writes(tmp_state_dir, monkeypatch)
 
 # ── 4. No API key → empty ──────────────────────────────────────────────
 
-def test_load_usage_with_no_api_key_returns_empty(tmp_state_dir, monkeypatch):
+def test_load_usage_with_no_api_key_returns_empty(tmp_state_dir, monkeypatch, capsys):
     monkeypatch.delenv("ANTHROPIC_ADMIN_API_KEY", raising=False)
     info = load_usage()
+    err = capsys.readouterr().err
     assert info.five_hour is None
     assert info.seven_day is None
     assert info.raw_present is False
+    assert err == ""
 
 
 # ── 5. 401 → log + empty ───────────────────────────────────────────────
@@ -172,7 +174,7 @@ def test_load_usage_with_malformed_cache_treats_as_missing(tmp_state_dir, monkey
     # The key assertion: no exception was raised and a valid UsageInfo returned.
     assert isinstance(info, UsageInfo)
     assert info.raw_present is True
-    assert "corrupt" in err.lower() or "usage" in err.lower() or err == ""
+    assert "corrupt" in err.lower()
 
 
 # ── 8. Stale cache + failed fetch → use stale ─────────────────────────
@@ -269,16 +271,16 @@ def test_parse_response_handles_window_just_reset(tmp_state_dir):
 # ── 12. _format_resets_in ─────────────────────────────────────────────
 
 def test_format_resets_in_hours_and_minutes():
-    assert _format_resets_in(5280) == "1h28m"  # 1*3600 + 28*60 = 5280
+    assert format_resets_in(5280) == "1h28m"  # 1*3600 + 28*60 = 5280
 
 
 def test_format_resets_in_minutes_only():
-    assert _format_resets_in(47 * 60) == "47m"
+    assert format_resets_in(47 * 60) == "47m"
 
 
 def test_format_resets_in_seconds_only():
-    assert _format_resets_in(12) == "12s"
+    assert format_resets_in(12) == "12s"
 
 
 def test_format_resets_in_handles_negative():
-    assert _format_resets_in(-5) == "0s"
+    assert format_resets_in(-5) == "0s"

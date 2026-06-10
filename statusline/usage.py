@@ -20,6 +20,7 @@ import sys
 import tempfile
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from statusline.state import STATE_DIR
 
@@ -47,7 +48,12 @@ class UsageWindow:
 class UsageInfo:
     five_hour: UsageWindow | None
     seven_day: UsageWindow | None
-    raw_present: bool         # False if cache missing AND fetch failed
+    # Diagnostic flag for tests, not for production renderers.
+    # False iff the cache was missing AND the fetch failed (i.e. we
+    # genuinely have no usage data). True whenever at least one source
+    # provided data — whether fresh, stale-on-error, or post-fetch.
+    # The renderer should not branch on this; check the windows instead.
+    raw_present: bool
 
 
 def _atomic_write_bytes(path: pathlib.Path, content: bytes) -> None:
@@ -66,7 +72,7 @@ def _atomic_write_bytes(path: pathlib.Path, content: bytes) -> None:
         print(f"statusline: usage: write failed: {path}: {e}", file=sys.stderr)
 
 
-def _format_resets_in(seconds: int) -> str:
+def format_resets_in(seconds: int) -> str:
     """Format a duration as 1h28m, 47m, 12s depending on magnitude."""
     if seconds < 0:
         seconds = 0
@@ -222,7 +228,6 @@ def _parse_iso8601(s: str) -> float | None:
     if cleaned.endswith("Z"):
         cleaned = cleaned[:-1] + "+00:00"
     try:
-        from datetime import datetime, timezone
         dt = datetime.fromisoformat(cleaned)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)

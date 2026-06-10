@@ -11,7 +11,7 @@ import os
 from statusline.parse import Context
 from statusline.state import TipRotation
 from statusline.tips import select_tip, TipResult
-from statusline.usage import UsageInfo, UsageWindow, _format_resets_in
+from statusline.usage import UsageInfo, UsageWindow, format_resets_in
 from statusline.output import (
     CLR_DIM, CLR_TEXT, CLR_ACCENT, CLR_RESET,
     colorize, truncate, pct_color,
@@ -47,7 +47,7 @@ def _row1_usage_window(label: str, w: UsageWindow) -> str:
 
     Brackets get pct_color(); countdown + arrow + projection stay DIM."""
     used = colorize(f"{w.used_pct:3.0f}%", pct_color(w.used_pct))
-    countdown = colorize(f"⏰{_format_resets_in(w.resets_in_seconds)}", CLR_DIM)
+    countdown = colorize(f"⏰{format_resets_in(w.resets_in_seconds)}", CLR_DIM)
     projection = colorize(f"→{w.projected_pct:3.0f}%", CLR_DIM)
     return f"{CLR_TEXT}{label}{CLR_RESET}[{used}]{countdown} {projection}"
 
