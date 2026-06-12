@@ -78,7 +78,7 @@ def row1(ctx: Context, usage: UsageInfo | None = None) -> str:
 
 def _row2_ctx(ctx: Context) -> str:
     pct = ctx.context_window.used_percentage
-    label = colorize("◑ CTX", CLR_DIM)
+    label = colorize("🧠 CTX", CLR_DIM)
     if pct < 0:
         return f"{label} {colorize('--', CLR_DIM)}"
     return f"{label} {colorize(f'{pct:.0f}%', pct_color(pct))}"
@@ -101,7 +101,7 @@ def _row2_tok(ctx: Context) -> str:
     """D-class defense: uses total_input_tokens + total_output_tokens,
     NOT context_window_size (which is the model max and a different concept)."""
     cw = ctx.context_window
-    label = colorize("↕ TOK", CLR_DIM)
+    label = colorize("🔁 TOK", CLR_DIM)
     if cw.total_input_tokens == 0 and cw.total_output_tokens == 0:
         return f"{label} {colorize('--', CLR_DIM)}"
     total = cw.total_input_tokens + cw.total_output_tokens
@@ -116,7 +116,7 @@ def _row2_tok(ctx: Context) -> str:
 
 
 def _row2_tip(ctx: Context, rot: TipRotation, ai_tip: str, state_tags: list[str], elapsed: int) -> str:
-    label = colorize("✦ TIP", CLR_DIM)
+    label = colorize("💡 TIP", CLR_DIM)
     result: TipResult = select_tip(
         ctx, rot, state_tags=state_tags, elapsed=elapsed, ai_tip=ai_tip,
     )

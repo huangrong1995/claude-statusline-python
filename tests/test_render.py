@@ -97,6 +97,22 @@ def test_row2_handles_unknown_ctx_pct():
     assert "--" in out  # placeholder for unknown
 
 
+def test_row2_uses_emoji_icons():
+    """Pin the row-2 leading-icon design: brain / bolt / cycle / lightbulb.
+
+    See docs/superpowers/specs/2026-06-12-row2-emoji-icons-design.md.
+    The ANSI-color wrapper does not split the icon and label, so plain
+    substring checks suffice without _strip_ansi.
+    """
+    ctx = make_ctx()
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "🧠 CTX" in out, f"CTX should lead with brain emoji: {out!r}"
+    assert "⚡ CACHE" in out, f"CACHE should lead with bolt: {out!r}"
+    assert "🔁 TOK" in out, f"TOK should lead with cycle emoji: {out!r}"
+    assert "💡 TIP" in out, f"TIP should lead with lightbulb emoji: {out!r}"
+
+
 # ── Usage integration with row1 ──────────────────────────────────────
 
 def _make_usage_info() -> UsageInfo:
