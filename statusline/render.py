@@ -69,7 +69,7 @@ def row1(ctx: Context, usage: UsageInfo | None = None) -> str:
     directory = colorize(truncate(ctx.workspace.current_dir or "", 40), CLR_DIM)
     git = _row1_git(ctx)
     sep = f"{CLR_DIM} | {CLR_RESET}"
-    base = f"{CLR_ACCENT}◆ {CLR_RESET}{model}{sep}{CLR_DIM}📁 {CLR_RESET}{directory}{sep}{git}"
+    base = f"{CLR_ACCENT}✨ {CLR_RESET}{model}{sep}{CLR_DIM}📁 {CLR_RESET}{directory}{sep}{git}"
     usage_seg = _row1_usage(usage)
     if usage_seg:
         return f"{base}{sep}{usage_seg}"

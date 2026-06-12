@@ -50,6 +50,19 @@ def test_row1_handles_missing_git_info():
     assert "/tmp" in out
 
 
+def test_row1_uses_sparkles_icon():
+    """Pin the row-1 model-prefix icon: ✨ (sparkles).
+
+    See docs/superpowers/specs/2026-06-12-row1-sparkles-icon-design.md.
+    The icon and its trailing space sit between two ANSI sequences as
+    a contiguous block, so `"✨ " in out` is a valid substring check.
+    """
+    ctx = make_ctx()
+    out = row1(ctx)
+    assert "✨ " in out, f"row1 should lead with sparkles emoji: {out!r}"
+    assert "◆" not in out, f"row1 still contains old diamond glyph: {out!r}"
+
+
 def test_row2_includes_all_four_sections():
     ctx = make_ctx()
     rot = TipRotation(idx=0, last_epoch=0)
