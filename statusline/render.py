@@ -111,12 +111,12 @@ def _row2_tok(ctx: Context) -> str:
     return (
         f"{label} {colorize(f'↑{in_fmt}', CLR_TEXT)} "
         f"{colorize(f'↓{out_fmt}', CLR_DIM)} "
-        f"{colorize(f'/{total_fmt}', CLR_DIM)}"
+        f"{colorize(f'Σ{total_fmt}', CLR_DIM)}"
     )
 
 
 def _row2_tip(ctx: Context, rot: TipRotation, ai_tip: str, state_tags: list[str], elapsed: int) -> str:
-    label = colorize("💡 TIP", CLR_DIM)
+    label = colorize("💭 TIP", CLR_DIM)
     result: TipResult = select_tip(
         ctx, rot, state_tags=state_tags, elapsed=elapsed, ai_tip=ai_tip,
     )

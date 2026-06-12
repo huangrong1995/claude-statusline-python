@@ -128,3 +128,22 @@ def test_priority_functions_return_enum_not_string():
                             f"{node.name}() returns string literal "
                             f"{sub.value.value!r} — must return TipPool enum"
                         )
+
+
+def test_generic_pool_no_inline_icons_collide_with_row2_labels():
+    """Structural invariant: no GENERIC tip leads with 💡 or ⚡.
+
+    See docs/superpowers/specs/2026-06-12-row2-polish-design.md.
+    💡 was the old TIP label; ⚡ is the CACHE label. A GENERIC tip
+    that starts with either glyph would visually collide with the
+    row-2 row labels when selected. Other category-marker emojis
+    (🐛, ✅, 🔍, 📋, 🌿, 📌, 🤖, 🎨, ♻️) are fine — they don't appear
+    as row-2 labels.
+    """
+    for tip in _POOL_TABLE[TipPool.GENERIC]:
+        assert not tip.startswith("💡 "), (
+            f"GENERIC tip leads with 💡 (old TIP label): {tip!r}"
+        )
+        assert not tip.startswith("⚡ "), (
+            f"GENERIC tip leads with ⚡ (CACHE label): {tip!r}"
+        )

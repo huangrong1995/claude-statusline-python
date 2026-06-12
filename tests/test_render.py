@@ -89,6 +89,26 @@ def test_row2_tok_uses_session_cumulative_not_model_max():
     assert "12.3k" in out or "11.0k" in out or "13.0k" in out
 
 
+def test_row2_tok_uses_sigma_for_total():
+    """Pin the row-2 TOK total-prefix design: Σ (sum sigma), not /.
+
+    See docs/superpowers/specs/2026-06-12-row2-polish-design.md.
+    Σ is the conventional math symbol for sum; the previous '/' was
+    ambiguous between 'per', 'of', and 'slash command'. The total
+    here is 12345 + 678 = 13023, which _fmt_tokens formats as '13.0k'.
+    """
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=10.0,
+        context_window_size=200000,
+        total_input_tokens=12345,
+        total_output_tokens=678,
+        current_usage=None,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "Σ13.0k" in out, f"TOK total should be prefixed with Σ: {out!r}"
+
+
 def test_row3_includes_progress_bar():
     ctx = make_ctx(context_window=ContextWindowInfo(
         used_percentage=50.0, context_window_size=200000,
@@ -111,9 +131,10 @@ def test_row2_handles_unknown_ctx_pct():
 
 
 def test_row2_uses_emoji_icons():
-    """Pin the row-2 leading-icon design: brain / bolt / cycle / lightbulb.
+    """Pin the row-2 leading-icon design: brain / bolt / cycle / thought.
 
-    See docs/superpowers/specs/2026-06-12-row2-emoji-icons-design.md.
+    See docs/superpowers/specs/2026-06-12-row2-emoji-icons-design.md
+    and docs/superpowers/specs/2026-06-12-row2-polish-design.md.
     The ANSI-color wrapper does not split the icon and label, so plain
     substring checks suffice without _strip_ansi.
     """
@@ -123,7 +144,7 @@ def test_row2_uses_emoji_icons():
     assert "🧠 CTX" in out, f"CTX should lead with brain emoji: {out!r}"
     assert "⚡ CACHE" in out, f"CACHE should lead with bolt: {out!r}"
     assert "🔁 TOK" in out, f"TOK should lead with cycle emoji: {out!r}"
-    assert "💡 TIP" in out, f"TIP should lead with lightbulb emoji: {out!r}"
+    assert "💭 TIP" in out, f"TIP should lead with thought-balloon emoji: {out!r}"
 
 
 # ── Usage integration with row1 ──────────────────────────────────────
