@@ -5,7 +5,7 @@ rewritten from bash to Python to make four classes of bugs **structurally imposs
 
 ```
 ✨ Claude 4.6 Sonnet  |  📁 ~/projects/example  |  ⎇ main
-🧠 CTX 43%  |  ⚡ CACHE 92%  |  🔁 TOK ↑12.3k ↓200 /13.0k  |  💡 TIP /plan the next refactor
+🧠 CTX 43%  |  ⚡ CACHE 92%  |  🔁 TOK ↑12.3k ↓200 Σ13.0k  |  💭 TIP /plan the next refactor
 ▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱ 43%
 ```
 
