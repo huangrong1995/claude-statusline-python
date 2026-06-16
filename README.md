@@ -3,6 +3,8 @@
 A three-row statusline for [Claude Code](https://docs.anthropic.com/en/docs/claude-code),
 rewritten from bash to Python to make four classes of bugs **structurally impossible**.
 
+<img width="765" height="231" alt="image" src="https://github.com/user-attachments/assets/9c68dd30-5f9c-43a2-a3ad-d18ac8aab89f" />
+
 ```
 ✨ Claude 4.6 Sonnet  |  📁 ~/projects/example  |  ⎇ main
 🧠 CTX 43%  |  ⚡ CACHE 92%  |  🔁 TOK ↑12.3k ↓200 Σ13.0k  |  💭 TIP /plan the next refactor
