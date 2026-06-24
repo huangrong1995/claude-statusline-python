@@ -56,6 +56,7 @@ def main() -> int:
         elapsed = session.elapsed(now)
 
         state_tags = detect.detect_state_tags(ctx.workspace.current_dir)
+        branch = detect.detect_branch(ctx.workspace.current_dir)
         ai_tip = _read_ai_tip()
 
         # load_usage() handles all failures internally and returns an empty
@@ -63,7 +64,7 @@ def main() -> int:
         # below is a backstop.
         usage_info = usage.load_usage()
 
-        line1 = render.row1(ctx, usage=usage_info)
+        line1 = render.row1(ctx, usage=usage_info, branch=branch)
         line2 = render.row2(
             ctx, next_rot,
             ai_tip=ai_tip,

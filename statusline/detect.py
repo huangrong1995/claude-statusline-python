@@ -38,6 +38,17 @@ def _is_git_repo(dir: str) -> bool:
     return bool(_run_git(dir, "rev-parse", "--git-dir"))
 
 
+def detect_branch(dir: str) -> str:
+    """Return the current git branch for `dir`, or '' on any failure.
+    Never raises. Used to display branch instead of repo owner/name."""
+    if not dir:
+        return ""
+    dir = _expand_home(dir)
+    if not pathlib.Path(dir).is_dir():
+        return ""
+    return _run_git(dir, "branch", "--show-current").strip()
+
+
 def detect_state_tags(dir: str) -> list[str]:
     """Return a list of state tags for the given directory.
     Never raises. Empty list if dir is empty/inaccessible."""

@@ -26,10 +26,12 @@ def _fmt_tokens(n: int) -> str:
     return f"{v // 10}.{v % 10}k"
 
 
-def _row1_git(ctx: Context) -> str:
+def _row1_git(ctx: Context, branch: str = "") -> str:
     ws = ctx.workspace
     display = ""
-    if ws.git_worktree and ws.git_worktree != "null":
+    if branch:
+        display = branch
+    elif ws.git_worktree and ws.git_worktree != "null":
         display = ws.git_worktree
     elif ws.worktree_name and ws.worktree_name != "null":
         display = ws.worktree_name
@@ -64,10 +66,10 @@ def _row1_usage(usage: UsageInfo | None) -> str:
     return f"{CLR_DIM} | {CLR_RESET}".join(parts)
 
 
-def row1(ctx: Context, usage: UsageInfo | None = None) -> str:
+def row1(ctx: Context, usage: UsageInfo | None = None, branch: str = "") -> str:
     model = colorize(ctx.model.display_name or "--", CLR_ACCENT)
     directory = colorize(truncate(ctx.workspace.current_dir or "", 40), CLR_DIM)
-    git = _row1_git(ctx)
+    git = _row1_git(ctx, branch=branch)
     sep = f"{CLR_DIM} | {CLR_RESET}"
     base = f"{CLR_ACCENT}✨ {CLR_RESET}{model}{sep}{CLR_DIM}📁 {CLR_RESET}{directory}{sep}{git}"
     usage_seg = _row1_usage(usage)
