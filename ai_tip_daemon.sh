@@ -31,11 +31,17 @@ set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────
 INTERVAL="${AI_TIP_INTERVAL:-240}"
-MODEL="${AI_TIP_MODEL:-claude-haiku-4-5}"
+# Model resolution order: AI_TIP_MODEL → ANTHROPIC_MODEL → upstream default.
+MODEL="${AI_TIP_MODEL:-${ANTHROPIC_MODEL:-claude-haiku-4-5}}"
 CACHE="${AI_TIP_CACHE:-${HOME}/.claude/statusline/ai_tip_cache}"
 STATUSLINE_DIR="${HOME}/.claude/statusline"
 LOCKFILE="${STATUSLINE_DIR}/.ai_tip_daemon.lock"
 LOGFILE="${STATUSLINE_DIR}/ai_tip_daemon.log"
+
+# Endpoint base (respects ANTHROPIC_BASE_URL — e.g. minimaxi proxy).
+API_BASE="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+# Strip trailing slash so /v1/messages joins cleanly.
+API_BASE="${API_BASE%/}"
 
 mkdir -p "$STATUSLINE_DIR"
 
@@ -95,8 +101,15 @@ EOF
 call_llm() {
     local state_json="$1"
 
-    if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-        log "no ANTHROPIC_API_KEY set, skipping"
+    # Auth: prefer ANTHROPIC_AUTH_TOKEN (Bearer, e.g. Claude Code / minimaxi
+    # session token); fall back to ANTHROPIC_API_KEY (x-api-key, direct).
+    local auth_header
+    if [ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]; then
+        auth_header="Authorization: Bearer ${ANTHROPIC_AUTH_TOKEN}"
+    elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        auth_header="x-api-key: ${ANTHROPIC_API_KEY}"
+    else
+        log "no ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY set, skipping"
         return 1
     fi
 
@@ -133,10 +146,10 @@ PROMPT
     local response
     response=$(curl -sS --max-time 15 \
         -H "Content-Type: application/json" \
-        -H "x-api-key: $ANTHROPIC_API_KEY" \
+        -H "$auth_header" \
         -H "anthropic-version: 2023-06-01" \
         -d "$request_body" \
-        "https://api.anthropic.com/v1/messages" 2>/dev/null) || {
+        "${API_BASE}/v1/messages" 2>/dev/null) || {
         log "curl failed"
         return 1
     }
