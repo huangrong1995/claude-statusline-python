@@ -101,12 +101,15 @@ def _calc_ctx_pct(ctx: Context) -> float:
 
 
 def _row2_cache(ctx: Context) -> str:
+    """True cache hit rate = cache_read / (input + cache_read + cache_creation).
+    Denominator is total per-turn input; non-cached input pulls the rate
+    below 100% in steady state, exposing the actual cache effectiveness."""
     cw = ctx.context_window
     label = colorize("⚡ CACHE", CLR_DIM)
     if not cw.current_usage:
         return f"{label} {colorize('--', CLR_DIM)}"
     u = cw.current_usage
-    total = u.cache_read_input_tokens + u.cache_creation_input_tokens
+    total = u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens
     if total == 0:
         return f"{label} {colorize('--', CLR_DIM)}"
     rate = (u.cache_read_input_tokens * 100) // total

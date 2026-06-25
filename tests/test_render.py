@@ -217,6 +217,67 @@ def test_row2_ctx_handles_zero_window_without_crash():
     assert "10%" in out  # fallback
 
 
+# ── CACHE rate: true hit rate (not read/create ratio) ────────────────
+# Old formula was read / (read + create). In steady state cache_creation=0,
+# so it saturated to 100% regardless of how much non-cached input was sent.
+# True hit rate is read / (input + read + create), which surfaces the
+# non-cached portion and stays informative across the whole session.
+
+def test_row2_cache_true_hit_rate_includes_non_cached_input():
+    """fixture-like: input=1500, read=12000, create=100
+    → 12000 / 13600 = 88% (old formula would report 99%)."""
+    from statusline.parse import UsageInfo as CacheUsageInfo
+    usage = CacheUsageInfo(
+        input_tokens=1500, output_tokens=0,
+        cache_read_input_tokens=12000, cache_creation_input_tokens=100,
+    )
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=8.0, context_window_size=200000,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=usage,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "88%" in out, f"expected true hit rate 88%%, got: {out!r}"
+    assert "99%" not in out, f"old read/create ratio must not leak: {out!r}"
+    assert "100%" not in out, f"non-cached input must pull rate below 100%%: {out!r}"
+
+
+def test_row2_cache_is_100_when_pure_cache():
+    """input=0 时,所有 input 都来自 cache,真命中率就是 100%。"""
+    from statusline.parse import UsageInfo as CacheUsageInfo
+    usage = CacheUsageInfo(
+        input_tokens=0, output_tokens=0,
+        cache_read_input_tokens=12000, cache_creation_input_tokens=0,
+    )
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=6.0, context_window_size=200000,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=usage,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "100%" in out
+
+
+def test_row2_cache_dash_when_no_input_at_all():
+    """input/read/create 全为 0 时,显示占位符 '--'。"""
+    from statusline.parse import UsageInfo as CacheUsageInfo
+    usage = CacheUsageInfo(
+        input_tokens=0, output_tokens=0,
+        cache_read_input_tokens=0, cache_creation_input_tokens=0,
+    )
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=0.0, context_window_size=200000,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=usage,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "CACHE" in out
+    assert "--" in out
+
+
 # ── Usage integration with row1 ──────────────────────────────────────
 
 def _make_usage_info() -> UsageInfo:
