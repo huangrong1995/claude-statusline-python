@@ -79,11 +79,25 @@ def row1(ctx: Context, usage: UsageInfo | None = None, branch: str = "") -> str:
 
 
 def _row2_ctx(ctx: Context) -> str:
-    pct = ctx.context_window.used_percentage
+    pct = _calc_ctx_pct(ctx)
     label = colorize("🧠 CTX", CLR_DIM)
     if pct < 0:
         return f"{label} {colorize('--', CLR_DIM)}"
     return f"{label} {colorize(f'{pct:.0f}%', pct_color(pct))}"
+
+
+def _calc_ctx_pct(ctx: Context) -> float:
+    """真实 CTX 使用百分比 = (input + cache_creation + cache_read) / context_window_size。
+    Claude Code 上游 used_percentage 似乎只算 input,不算 cache,导致显示偏低。
+    优先自己算;若 current_usage / window_size 缺失则 fallback 到上游字段。"""
+    cw = ctx.context_window
+    if cw.current_usage and cw.context_window_size > 0:
+        u = cw.current_usage
+        used = (u.input_tokens
+                + u.cache_creation_input_tokens
+                + u.cache_read_input_tokens)
+        return (used * 100.0) / cw.context_window_size
+    return cw.used_percentage
 
 
 def _row2_cache(ctx: Context) -> str:
@@ -145,7 +159,7 @@ def row2(
 
 
 def row3(ctx: Context) -> str:
-    pct = ctx.context_window.used_percentage
+    pct = _calc_ctx_pct(ctx)
     width = 28
     if "COLUMNS" in os.environ:
         try:

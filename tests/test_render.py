@@ -147,6 +147,76 @@ def test_row2_uses_emoji_icons():
     assert "💭 TIP" in out, f"TIP should lead with thought-balloon emoji: {out!r}"
 
 
+# ── CTX percentage: real usage includes cache ────────────────────────
+# Claude Code 上游 used_percentage 似乎只算 input,不算 cache_read/cache_creation,
+# 导致 statusline 显示偏低。fix:用 current_usage 自己算(input + cache_creation + cache_read)
+# / context_window_size。这是一组行为契约测试,固定修复后语义。
+
+def test_row2_ctx_uses_real_input_plus_cache_when_available():
+    """有 current_usage 时,CTX 百分比应包含 input + cache_creation + cache_read。
+    upstream used_percentage=80% 是"input only";真实用量 80% input + 8% cache = 88%。"""
+    from statusline.parse import UsageInfo as CtxUsageInfo
+    real_usage = CtxUsageInfo(
+        input_tokens=160000,
+        output_tokens=0,
+        cache_read_input_tokens=16000,
+        cache_creation_input_tokens=0,
+    )
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=80.0,           # upstream 偏低
+        context_window_size=200000,
+        total_input_tokens=160000, total_output_tokens=0,
+        current_usage=real_usage,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    # (160000 + 16000) / 200000 = 88.0 → 88%
+    assert "88%" in out, f"expected real 88%% (input+cache), got: {out!r}"
+    assert "80%" not in out, f"upstream 80%% should be replaced, got: {out!r}"
+
+
+def test_row2_ctx_falls_back_to_upstream_when_no_current_usage():
+    """没 current_usage 时,fallback 到 upstream used_percentage。"""
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=42.0, context_window_size=200000,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=None,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "42%" in out
+
+
+def test_row3_progress_bar_uses_real_pct():
+    """row3 进度条也用 _calc_ctx_pct,跟 row2 同步。"""
+    from statusline.parse import UsageInfo as CtxUsageInfo
+    real_usage = CtxUsageInfo(
+        input_tokens=160000, output_tokens=0,
+        cache_read_input_tokens=16000, cache_creation_input_tokens=0,
+    )
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=80.0, context_window_size=200000,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=real_usage,
+    ))
+    out = row3(ctx)
+    # row3 format: "▰...▰ ▱...▱  88%"  → just check 88% 出现,80% 不出现
+    assert "88%" in out
+    assert "80%" not in out
+
+
+def test_row2_ctx_handles_zero_window_without_crash():
+    """window_size=0 时,跳过自己算,fallback 到 upstream,不要除零。"""
+    ctx = make_ctx(context_window=ContextWindowInfo(
+        used_percentage=10.0, context_window_size=0,
+        total_input_tokens=0, total_output_tokens=0,
+        current_usage=None,
+    ))
+    rot = TipRotation(idx=0, last_epoch=0)
+    out = row2(ctx, rot, ai_tip="", state_tags=[])
+    assert "10%" in out  # fallback
+
+
 # ── Usage integration with row1 ──────────────────────────────────────
 
 def _make_usage_info() -> UsageInfo:

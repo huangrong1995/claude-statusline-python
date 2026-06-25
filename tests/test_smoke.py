@@ -37,7 +37,9 @@ def test_full_render_with_fixture():
     assert "CTX" in out2
     assert "TOK" in out2
     assert "TIP" in out2
-    assert "43%" in out3 or "42%" in out3  # rounding
+    # fixture: input=1500, cache_read=12000, cache_creation=100, window=200000
+    # → (1500+12000+100)/200000 ≈ 6.8% (CTX real % is "input+cache", not upstream input-only)
+    assert "7%" in out3 or "6%" in out3  # rounding
 
 
 def test_no_color_mode_produces_no_ansi():
